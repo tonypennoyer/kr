@@ -1,0 +1,10 @@
+source_column,new_column,data_type
+Invoice No,invoice_no,TEXT
+Date,date,DATE
+A/C Ref,account_ref,TEXT
+Name,name,TEXT
+Docket,docket,BIGINT
+Product,product,TEXT
+Product Desc,product_desc,TEXT
+Quantity,quantity,NUMERIC(10,2)
+Amount in US$,amount_usd,NUMERIC(10,2)
