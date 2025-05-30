@@ -1,3 +1,6 @@
 # .gitignore
 krvenv/
 .env
+load/.DS_Store
+load/config/.DS_Store
+load/__pycache__/
