@@ -1,55 +1,28 @@
 import pandas as pd
-from db_utils import connect_db, get_schema_from_csv
 from datetime import datetime
+import os
+from sqlalchemy import create_engine
+from dotenv import load_dotenv
+
+load_dotenv('../.env')
 
 # File paths
-DATA_CSV = "data/kr_sales_24_01.csv"
-SCHEMA_CSV = "config/schema_config.csv"
+DATA_CSV = "../../data/kr_sales_24_01.csv"
+SCHEMA_CSV = "../config/schema_config.csv"
 TABLE_NAME = "sales_data"
 SCHEMA_NAME = "raw"
 
-# Read schema definition
-col_defs, col_names, col_map = get_schema_from_csv(SCHEMA_CSV)
-
 # Load and rename CSV columns
 df = pd.read_csv(DATA_CSV)
-df = df.rename(columns=col_map)
 
-# Optional: convert date column to proper format (adjust column name if needed)
-if 'date' in df.columns:
-    df['date'] = pd.to_datetime(df['date'], errors='coerce')  # coerce invalid dates to NaT
+df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%y').dt.strftime('%Y-%m-%d')
 
-print(df)
+df.rename(columns={'Date': 'report_date'}, inplace=True)
 
-# # Connect to Neon DB
-# conn = connect_db()
-# cur = conn.cursor()
+df.columns = df.columns.str.replace(' ', '_', regex=False).str.replace('/', '_', regex=False).str.replace('$', '', regex=False).str.lower()
 
-# # Create schema if not exists
-# cur.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA_NAME}")
+engine = create_engine(os.environ['DATABASE_URL'])
 
-# # Create table if not exists
-# create_query = f"""
-#     CREATE TABLE IF NOT EXISTS {SCHEMA_NAME}.{TABLE_NAME} (
-#         id SERIAL PRIMARY KEY,
-#         {col_defs}
-#     )
-# """
-# cur.execute(create_query)
+df.to_sql('sales_data', engine, if_exists='replace', index=False)
 
-# # Insert rows
-# insert_query = f"""
-#     INSERT INTO {SCHEMA_NAME}.{TABLE_NAME} ({', '.join(col_names)})
-#     VALUES ({', '.join(['%s'] * len(col_names))})
-# """
-
-# # Insert each row
-# for _, row in df.iterrows():
-#     values = [row[col] for col in col_names]
-#     cur.execute(insert_query, values)
-
-# conn.commit()
-# cur.close()
-# conn.close()
-
-# print(f"✅ {len(df)} rows inserted into {SCHEMA_NAME}.{TABLE_NAME} in Neon.")
+print("Data uploaded successfully")
